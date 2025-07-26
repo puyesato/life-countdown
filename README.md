@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -78,7 +77,7 @@
             flex: 1;
             min-width: 80px; /* Ensure inputs don't become too narrow */
         }
-        .save-button, .llm-button {
+        .save-button {
             background-color: #4299e1; /* Blue-500 */
             color: white;
             padding: 10px 20px; /* Adjusted padding */
@@ -90,19 +89,12 @@
             width: 100%;
             margin-top: 10px;
         }
-        .save-button:hover, .llm-button:hover {
+        .save-button:hover {
             background-color: #3182ce; /* Blue-600 */
             transform: translateY(-2px);
         }
-        .save-button:active, .llm-button:active {
+        .save-button:active {
             transform: translateY(0);
-        }
-        .llm-button {
-            background-color: #9f7aea; /* Purple for LLM button */
-            margin-top: 20px; /* More space above LLM button */
-        }
-        .llm-button:hover {
-            background-color: #805ad5;
         }
         .message-box {
             margin-top: 10px; /* Adjusted margin */
@@ -120,37 +112,6 @@
             background-color: #e53e3e; /* Red-600 */
             color: white;
         }
-        .llm-response-box {
-            background-color: #4a5568; /* Darker background for response */
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-            border: 1px solid #63b3ed;
-            color: #e2e8f0;
-            font-size: 0.95rem;
-            text-align: center;
-            min-height: 50px; /* Ensure it has some height even when empty */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-style: italic;
-        }
-        .llm-response-box.hidden {
-            display: none;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #63b3ed;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
 
         /* Styling for each individual countdown display item */
         .countdown-item {
@@ -195,7 +156,7 @@
             .input-flex-group {
                 gap: 10px;
             }
-            .save-button, .llm-button {
+            .save-button {
                 padding: 12px 25px;
             }
             .message-box {
@@ -249,22 +210,18 @@
 
         <!-- Countdown Display Section -->
         <div class="countdown-item">
-            <span class="countdown-label">Days Left</span>
-            <span id="daysLeft" class="countdown-value">--</span>
+            <span class="countdown-label">Sunsets Left</span>
+            <span id="sunsetsLeft" class="countdown-value">--</span>
+        </div>
+
+        <div class="countdown-item">
+            <span class="countdown-label">Active Hours Left (Excl. Sleep & Work)</span>
+            <span id="activeHoursLeftWithoutTV" class="countdown-value">--</span>
         </div>
 
         <div class="countdown-item">
             <span class="countdown-label">Active Hours Left (Excl. Sleep, Work & TV)</span>
-            <span id="activeHoursLeft" class="countdown-value">--</span>
-        </div>
-
-        <!-- Removed Bitcoin Price and Block Height display items -->
-
-        <!-- LLM Feature Section -->
-        <button id="getReflectionBtn" class="llm-button">Get a Life Reflection ✨</button>
-        <div id="reflectionResponse" class="llm-response-box hidden">
-            <div class="loading-spinner hidden" id="reflectionSpinner"></div>
-            <span id="reflectionText"></span>
+            <span id="activeHoursLeftWithTV" class="countdown-value">--</span>
         </div>
 
         <!-- Message display (e.g., "Time's Up!") -->
@@ -298,19 +255,11 @@
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
         const inputMessageBox = document.getElementById('inputMessageBox');
 
-        const daysLeftElement = document.getElementById('daysLeft');
-        const activeHoursLeftElement = document.getElementById('activeHoursLeft');
+        // Removed daysLeftElement reference
+        const sunsetsLeftElement = document.getElementById('sunsetsLeft'); // Keep this
+        const activeHoursLeftWithoutTVElement = document.getElementById('activeHoursLeftWithoutTV'); // Renamed
+        const activeHoursLeftWithTVElement = document.getElementById('activeHoursLeftWithTV'); // New element
         const statusMessageElement = document.getElementById('statusMessage');
-
-        // LLM Feature Elements
-        const getReflectionBtn = document.getElementById('getReflectionBtn');
-        const reflectionResponseBox = document.getElementById('reflectionResponse');
-        const reflectionText = document.getElementById('reflectionText');
-        const reflectionSpinner = document.getElementById('reflectionSpinner');
-
-        // Removed Bitcoin Data Elements references:
-        // const bitcoinPriceElement = document.getElementById('bitcoinPrice');
-        // const blockHeightElement = document.getElementById('blockHeight');
 
         /**
          * Displays a message in the input message box.
@@ -482,7 +431,6 @@
 
         // Store the interval ID so we can clear it when settings are updated
         let countdownInterval;
-        let bitcoinDataInterval; // This variable will no longer be used but is kept for clarity if re-added
 
         /**
          * Starts or restarts the countdown interval.
@@ -506,8 +454,9 @@
             // Check if time has run out
             if (timeLeftMs <= 0) {
                 // If time is up, set all displays to '0' and show the "Time's Up!" message
-                daysLeftElement.textContent = '0';
-                activeHoursLeftElement.textContent = '0';
+                sunsetsLeftElement.textContent = '0';
+                activeHoursLeftWithoutTVElement.textContent = '0';
+                activeHoursLeftWithTVElement.textContent = '0';
                 statusMessageElement.textContent = "Time's Up!";
                 statusMessageElement.classList.remove('hidden'); // Make message visible
                 clearInterval(countdownInterval); // Stop the countdown from updating
@@ -518,141 +467,43 @@
             let totalSecondsLeft = Math.floor(timeLeftMs / 1000);
 
             // --- Calculate total active seconds (excluding sleep) ---
-            // This is the total time available for non-sleep activities across the entire remaining lifespan
-            let activeSecondsTotal = Math.floor(totalSecondsLeft * (ACTIVE_HOURS_PER_DAY_BASE / 24));
+            let activeSecondsTotalAfterSleep = Math.floor(totalSecondsLeft * (ACTIVE_HOURS_PER_DAY_BASE / 24));
 
             // --- Subtract working hours from active seconds ---
-            // Determine the end of the working period for this calculation.
-            // It's either the retirement date or the estimated end of life, whichever comes first.
             const workEndDateForCalculation = Math.min(retirementDate.getTime(), estimatedEndDate.getTime());
-
-            // Calculate the duration of the working period from now until the determined end date.
             const workDurationMs = Math.max(0, workEndDateForCalculation - now.getTime());
-
-            // Convert the working duration from milliseconds to weeks.
             const workWeeksDuration = workDurationMs / (1000 * 60 * 60 * 24 * 7);
-
-            // Calculate the total work hours to subtract over this period.
             const totalWorkHoursToSubtract = workWeeksDuration * WORK_HOURS_PER_WEEK;
-            // Convert total work hours to seconds.
             const totalWorkSecondsToSubtract = totalWorkHoursToSubtract * 60 * 60;
 
-            // Subtract the calculated work seconds from the total active seconds.
-            activeSecondsTotal = Math.max(0, activeSecondsTotal - totalWorkSecondsToSubtract);
+            let activeSecondsAfterSleepAndWork = Math.max(0, activeSecondsTotalAfterSleep - totalWorkSecondsToSubtract);
 
-            // --- Subtract TV hours from active seconds ---
-            // Calculate total TV hours to subtract over the entire remaining lifespan (until estimatedEndDate)
+            // --- Calculate Active Hours Left (Excl. Sleep & Work) - BEFORE TV DEDUCTION ---
+            const activeHoursLeftWithoutTV = Math.floor(activeSecondsAfterSleepAndWork / (60 * 60));
+
+            // --- Subtract TV hours from active seconds (for the final display) ---
             const totalTVHoursToSubtract = (totalSecondsLeft / (60 * 60 * 24)) * TV_HOURS_PER_DAY;
             const totalTVSecondsToSubtract = totalTVHoursToSubtract * 60 * 60;
 
-            // Subtract TV seconds from the remaining active seconds.
-            activeSecondsTotal = Math.max(0, activeSecondsTotal - totalTVSecondsToSubtract);
-
+            let activeSecondsAfterAllDeductions = Math.max(0, activeSecondsAfterSleepAndWork - totalTVSecondsToSubtract);
 
             // --- Break down remaining active seconds into days, hours ---
-            // Days left is still based on the *total* time remaining, not just active time.
-            const daysLeft = Math.floor(totalSecondsLeft / (60 * 60 * 24));
+            const daysLeft = Math.floor(totalSecondsLeft / (60 * 60 * 24)); // Still needed for sunsets
 
-            // Calculate active hours from the remaining active seconds
-            const activeHoursLeft = Math.floor(activeSecondsTotal / (60 * 60));
+            const activeHoursLeftWithTV = Math.floor(activeSecondsAfterAllDeductions / (60 * 60));
 
             // --- Update the Display ---
-            daysLeftElement.textContent = daysLeft.toLocaleString();
-            activeHoursLeftElement.textContent = activeHoursLeft.toLocaleString();
+            sunsetsLeftElement.textContent = daysLeft.toLocaleString(); // Sunsets are equal to days left
+            activeHoursLeftWithoutTVElement.textContent = activeHoursLeftWithoutTV.toLocaleString();
+            activeHoursLeftWithTVElement.textContent = activeHoursLeftWithTV.toLocaleString();
             statusMessageElement.classList.add('hidden');
         }
-
-        // Removed the fetchBitcoinData function entirely
-        /*
-        async function fetchBitcoinData() {
-            bitcoinPriceElement.textContent = 'Loading...';
-            blockHeightElement.textContent = 'Loading...';
-
-            try {
-                const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-                const priceData = await priceResponse.json();
-                if (priceData && priceData.bitcoin && priceData.bitcoin.usd) {
-                    bitcoinPriceElement.textContent = `$${priceData.bitcoin.usd.toLocaleString()}`;
-                } else {
-                    bitcoinPriceElement.textContent = 'N/A';
-                    console.error('Error fetching Bitcoin price: Unexpected data structure', priceData);
-                }
-            } catch (error) {
-                bitcoinPriceElement.textContent = 'Error';
-                console.error('Error fetching Bitcoin price:', error);
-            }
-
-            try {
-                const blockHeightResponse = await fetch('https://blockchain.info/q/getblockcount');
-                const blockHeightData = await blockHeightResponse.text();
-                const blockHeight = parseInt(blockHeightData);
-                if (!isNaN(blockHeight)) {
-                    blockHeightElement.textContent = blockHeight.toLocaleString();
-                } else {
-                    blockHeightElement.textContent = 'N/A';
-                    console.error('Error fetching block height: Unexpected data', blockHeightData);
-                }
-            } catch (error) {
-                blockHeightElement.textContent = 'Error';
-                console.error('Error fetching block height:', error);
-            }
-        }
-        */
-
-
-        /**
-         * Calls the Gemini API to get a life reflection prompt.
-         */
-        getReflectionBtn.addEventListener('click', async function() {
-            reflectionResponseBox.classList.remove('hidden');
-            reflectionText.textContent = ''; // Clear previous text
-            reflectionSpinner.classList.remove('hidden'); // Show spinner
-
-            const prompt = "You are a thoughtful life coach. Given that the user is reflecting on their life's duration, provide a single, concise, and inspiring question or thought for self-reflection. Focus on making the most of their time, personal growth, or pursuing passions. Do not mention specific numbers or calculations from the app. Keep it under 50 words.";
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-
-            const payload = { contents: chatHistory };
-            const apiKey = ""; // Canvas will automatically provide this in runtime
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    reflectionText.textContent = text;
-                } else {
-                    reflectionText.textContent = "Could not generate a reflection. Please try again.";
-                    console.error("Gemini API response structure unexpected:", result);
-                }
-            } catch (error) {
-                reflectionText.textContent = "Error fetching reflection. Please check your connection or try again.";
-                console.error("Error calling Gemini API:", error);
-            } finally {
-                reflectionSpinner.classList.add('hidden'); // Hide spinner
-            }
-        });
-
 
         // --- Initialization ---
         // Load settings from localStorage when the page loads
         loadSettings();
         // Start the life countdown
         startCountdown();
-        // Clear the Bitcoin data interval if it was running
-        if (bitcoinDataInterval) {
-            clearInterval(bitcoinDataInterval);
-        }
-        // Removed initial call to fetchBitcoinData()
     </script>
 </body>
 </html>
