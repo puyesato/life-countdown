@@ -199,6 +199,7 @@
     <div class="watch-container">
         <h1 class="text-3xl font-extrabold text-blue-200 mb-4">Life Countdown</h1>
 
+        <!-- Input Fields Section -->
         <div class="input-group">
             <label>Your Birth Date:</label>
             <div class="input-flex-group">
@@ -217,6 +218,30 @@
             <label for="lifespanInput">Estimated Lifespan (Years):</label>
             <input type="number" id="lifespanInput" placeholder="e.g., 85" min="1" max="120">
         </div>
+
+        <hr class="w-full border-t border-gray-600 my-8"> <!-- Separator for Spouse Info -->
+
+        <div class="input-group">
+            <label>Spouse's Birth Date:</label>
+            <div class="input-flex-group">
+                <div>
+                    <input type="number" id="spouseBirthMonthInput" placeholder="MM" min="1" max="12">
+                </div>
+                <div>
+                    <input type="number" id="spouseBirthDayInput" placeholder="DD" min="1" max="31">
+                </div>
+                <div>
+                    <input type="number" id="spouseBirthYearInput" placeholder="YYYY" min="1900" max="2025">
+                </div>
+            </div>
+        </div>
+        <div class="input-group">
+            <label for="spouseLifespanInput">Spouse's Estimated Lifespan (Years):</label>
+            <input type="number" id="spouseLifespanInput" placeholder="e.g., 88" min="1" max="120">
+        </div>
+
+        <hr class="w-full border-t border-gray-600 my-8"> <!-- Separator for Other Inputs -->
+
         <div class="input-group">
             <label for="retirementYearInput">Target Retirement Year:</label>
             <input type="number" id="retirementYearInput" placeholder="e.g., 2055" min="1900" max="2100">
@@ -229,11 +254,19 @@
             <label for="surfSessionsPerWeekInput">Surf Sessions per Week:</label>
             <input type="number" id="surfSessionsPerWeekInput" placeholder="e.g., 3" min="0" max="7">
         </div>
+        <div class="input-group">
+            <label for="vacationsPerYearInput">Vacations per Year:</label>
+            <input type="number" id="vacationsPerYearInput" placeholder="e.g., 2" min="0" max="52">
+        </div>
         <button id="saveSettingsBtn" class="save-button">Save Settings</button>
         <div id="inputMessageBox" class="message-box hidden"></div>
 
-        <hr class="w-full border-t border-gray-600 my-8"> <h2 class="results-title">Time is our most valuable asset.</h2>
+        <hr class="w-full border-t border-gray-600 my-8"> <!-- Separator -->
 
+        <!-- Results Title -->
+        <h2 class="results-title">Time is our most valuable asset.</h2>
+
+        <!-- Countdown Display Section -->
         <div class="countdown-item">
             <span id="sunsetsLeft" class="countdown-value">--</span>
             <span class="countdown-label">🌅</span>
@@ -269,6 +302,37 @@
             <span class="countdown-label">🏄‍♀️ Stoked</span>
         </div>
 
+        <hr class="w-full border-t border-gray-600 my-8"> <!-- Separator for Together Time -->
+
+        <h2 class="results-title">Time Left Together</h2>
+
+        <div class="countdown-item">
+            <span id="togetherDaysLeft" class="countdown-value">--</span>
+            <span class="countdown-label">Days Together</span>
+        </div>
+        <div class="countdown-item">
+            <span id="togetherActiveHoursLeft" class="countdown-value">--</span>
+            <span class="countdown-label">Hours Together</span>
+        </div>
+        <div class="countdown-item">
+            <span id="morningCoffeeLeft" class="countdown-value">--</span>
+            <span class="countdown-label">☕ Morning Coffees Left</span>
+        </div>
+        <div class="countdown-item">
+            <span id="togetherBirthdaysLeft" class="countdown-value">--</span>
+            <span class="countdown-label">🎁 Birthdays (Yours & Spouse's)</span>
+        </div>
+        <div class="countdown-item">
+            <span id="togetherValentinesLeft" class="countdown-value">--</span>
+            <span class="countdown-label">❤️ Valentine's Days Together</span>
+        </div>
+        <div class="countdown-item">
+            <span id="vacationsRemaining" class="countdown-value">--</span>
+            <span class="countdown-label">✈️ Vacations Remaining</span>
+        </div>
+
+
+        <!-- Message display (e.g., "Time's Up!") -->
         <div id="statusMessage" class="message hidden"></div>
     </div>
 
@@ -279,25 +343,45 @@
         let BIRTH_DAY = 1;   // Default to 1st
         let BIRTH_YEAR = 1990;
         let ESTIMATED_LIFESPAN_YEARS = 85;
+
+        let SPOUSE_BIRTH_MONTH = 1;
+        let SPOUSE_BIRTH_DAY = 1;
+        let SPOUSE_BIRTH_YEAR = 1990;
+        let SPOUSE_LIFESPAN_YEARS = 88;
+
         let RETIREMENT_YEAR = 2055;
         let TV_HOURS_PER_DAY = 2; // Default hours of TV/streaming per day
         let SURF_SESSIONS_PER_WEEK = 0; // New: Default surf sessions per week
+        let VACATIONS_PER_YEAR = 0; // New: Default vacations per year
+
         const ACTIVE_HOURS_PER_DAY_BASE = 16; // 24 hours - 8 hours for sleep (base active hours before work/TV)
         const WORK_HOURS_PER_WEEK = 40; // Hours worked per week
 
         // --- Date Variables (will be recalculated) ---
-        let estimatedEndDate;
+        let estimatedEndDate; // User's estimated end date
+        let spouseEstimatedEndDate; // Spouse's estimated end date
+        let togetherEndDate; // The earlier of the two end dates
+
         let retirementDate;
-        let userBirthDate; // New variable for the precise birth date
+        let userBirthDate;
+        let spouseBirthDate;
 
         // --- DOM Element References ---
         const birthMonthInput = document.getElementById('birthMonthInput');
         const birthDayInput = document.getElementById('birthDayInput');
         const birthYearInput = document.getElementById('birthYearInput');
         const lifespanInput = document.getElementById('lifespanInput');
+
+        const spouseBirthMonthInput = document.getElementById('spouseBirthMonthInput');
+        const spouseBirthDayInput = document.getElementById('spouseBirthDayInput');
+        const spouseBirthYearInput = document.getElementById('spouseBirthYearInput');
+        const spouseLifespanInput = document.getElementById('spouseLifespanInput');
+
         const retirementYearInput = document.getElementById('retirementYearInput');
         const tvHoursPerDayInput = document.getElementById('tvHoursPerDayInput');
-        const surfSessionsPerWeekInput = document.getElementById('surfSessionsPerWeekInput'); // New input reference
+        const surfSessionsPerWeekInput = document.getElementById('surfSessionsPerWeekInput');
+        const vacationsPerYearInput = document.getElementById('vacationsPerYearInput'); // New input reference
+
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
         const inputMessageBox = document.getElementById('inputMessageBox');
 
@@ -307,7 +391,16 @@
         const birthdaysLeftElement = document.getElementById('birthdaysLeft');
         const christmasesLeftElement = document.getElementById('christmasesLeft');
         const newYearsLeftElement = document.getElementById('newYearsLeft');
-        const surfSessionsTotalElement = document.getElementById('surfSessionsTotal'); // New display reference
+        const surfSessionsTotalElement = document.getElementById('surfSessionsTotal');
+
+        // New Together Time Elements
+        const togetherDaysLeftElement = document.getElementById('togetherDaysLeft');
+        const togetherActiveHoursLeftElement = document.getElementById('togetherActiveHoursLeft');
+        const morningCoffeeLeftElement = document.getElementById('morningCoffeeLeft');
+        const togetherBirthdaysLeftElement = document.getElementById('togetherBirthdaysLeft');
+        const togetherValentinesLeftElement = document.getElementById('togetherValentinesLeft'); // New
+        const vacationsRemainingElement = document.getElementById('vacationsRemaining'); // New display reference
+
         const statusMessageElement = document.getElementById('statusMessage');
 
         /**
@@ -333,55 +426,72 @@
             const savedBirthDay = localStorage.getItem('birthDay');
             const savedBirthYear = localStorage.getItem('birthYear');
             const savedLifespan = localStorage.getItem('lifespan');
+
+            const savedSpouseBirthMonth = localStorage.getItem('spouseBirthMonth');
+            const savedSpouseBirthDay = localStorage.getItem('spouseBirthDay');
+            const savedSpouseBirthYear = localStorage.getItem('spouseBirthYear');
+            const savedSpouseLifespan = localStorage.getItem('spouseLifespan');
+
             const savedRetirementYear = localStorage.getItem('retirementYear');
             const savedTvHoursPerDay = localStorage.getItem('tvHoursPerDay');
-            const savedSurfSessionsPerWeek = localStorage.getItem('surfSessionsPerWeek'); // Load new setting
+            const savedSurfSessionsPerWeek = localStorage.getItem('surfSessionsPerWeek');
+            const savedVacationsPerYear = localStorage.getItem('vacationsPerYear'); // Load new setting
 
-            // Load and apply birth date components
+            // Load and apply user birth date components
             if (savedBirthMonth) {
                 BIRTH_MONTH = parseInt(savedBirthMonth);
                 birthMonthInput.value = BIRTH_MONTH;
-            } else {
-                birthMonthInput.value = BIRTH_MONTH; // Set default if not saved
-            }
+            } else { birthMonthInput.value = BIRTH_MONTH; }
             if (savedBirthDay) {
                 BIRTH_DAY = parseInt(savedBirthDay);
                 birthDayInput.value = BIRTH_DAY;
-            } else {
-                birthDayInput.value = BIRTH_DAY; // Set default if not saved
-            }
+            } else { birthDayInput.value = BIRTH_DAY; }
             if (savedBirthYear) {
                 BIRTH_YEAR = parseInt(savedBirthYear);
                 birthYearInput.value = BIRTH_YEAR;
-            } else {
-                birthYearInput.value = BIRTH_YEAR; // Set default if not saved
-            }
-
-            // Load and apply other settings
+            } else { birthYearInput.value = BIRTH_YEAR; }
             if (savedLifespan) {
                 ESTIMATED_LIFESPAN_YEARS = parseInt(savedLifespan);
                 lifespanInput.value = ESTIMATED_LIFESPAN_YEARS;
-            } else {
-                lifespanInput.value = ESTIMATED_LIFESPAN_YEARS; // Set default if not saved
-            }
+            } else { lifespanInput.value = ESTIMATED_LIFESPAN_YEARS; }
+
+            // Load and apply spouse birth date components
+            if (savedSpouseBirthMonth) {
+                SPOUSE_BIRTH_MONTH = parseInt(savedSpouseBirthMonth);
+                spouseBirthMonthInput.value = SPOUSE_BIRTH_MONTH;
+            } else { spouseBirthMonthInput.value = SPOUSE_BIRTH_MONTH; }
+            if (savedSpouseBirthDay) {
+                SPOUSE_BIRTH_DAY = parseInt(savedSpouseBirthDay);
+                spouseBirthDayInput.value = SPOUSE_BIRTH_DAY;
+            } else { spouseBirthDayInput.value = SPOUSE_BIRTH_DAY; }
+            if (savedSpouseBirthYear) {
+                SPOUSE_BIRTH_YEAR = parseInt(savedSpouseBirthYear);
+                spouseBirthYearInput.value = SPOUSE_BIRTH_YEAR;
+            } else { spouseBirthYearInput.value = SPOUSE_BIRTH_YEAR; }
+            if (savedSpouseLifespan) {
+                SPOUSE_LIFESPAN_YEARS = parseInt(savedSpouseLifespan);
+                spouseLifespanInput.value = SPOUSE_LIFESPAN_YEARS;
+            } else { spouseLifespanInput.value = SPOUSE_LIFESPAN_YEARS; }
+
+
+            // Load and apply other settings
             if (savedRetirementYear) {
                 RETIREMENT_YEAR = parseInt(savedRetirementYear);
                 retirementYearInput.value = RETIREMENT_YEAR;
-            } else {
-                retirementYearInput.value = RETIREMENT_YEAR; // Set default if not saved
-            }
+            } else { retirementYearInput.value = RETIREMENT_YEAR; }
             if (savedTvHoursPerDay) {
                 TV_HOURS_PER_DAY = parseFloat(savedTvHoursPerDay);
                 tvHoursPerDayInput.value = TV_HOURS_PER_DAY;
-            } else {
-                tvHoursPerDayInput.value = TV_HOURS_PER_DAY; // Set default if not saved
-            }
-            if (savedSurfSessionsPerWeek) { // Load new setting value
+            } else { tvHoursPerDayInput.value = TV_HOURS_PER_DAY; }
+            if (savedSurfSessionsPerWeek) {
                 SURF_SESSIONS_PER_WEEK = parseFloat(savedSurfSessionsPerWeek);
                 surfSessionsPerWeekInput.value = SURF_SESSIONS_PER_WEEK;
-            } else {
-                surfSessionsPerWeekInput.value = SURF_SESSIONS_PER_WEEK; // Set default if not saved
-            }
+            } else { surfSessionsPerWeekInput.value = SURF_SESSIONS_PER_WEEK; }
+            if (savedVacationsPerYear) { // Load new setting value
+                VACATIONS_PER_YEAR = parseFloat(savedVacationsPerYear);
+                vacationsPerYearInput.value = VACATIONS_PER_YEAR;
+            } else { vacationsPerYearInput.value = VACATIONS_PER_YEAR; }
+
 
             // Recalculate dates based on loaded or default values
             recalculateDates();
@@ -395,23 +505,43 @@
             localStorage.setItem('birthDay', BIRTH_DAY);
             localStorage.setItem('birthYear', BIRTH_YEAR);
             localStorage.setItem('lifespan', ESTIMATED_LIFESPAN_YEARS);
+
+            localStorage.setItem('spouseBirthMonth', SPOUSE_BIRTH_MONTH);
+            localStorage.setItem('spouseBirthDay', SPOUSE_BIRTH_DAY);
+            localStorage.setItem('spouseBirthYear', SPOUSE_BIRTH_YEAR);
+            localStorage.setItem('spouseLifespan', SPOUSE_LIFESPAN_YEARS);
+
             localStorage.setItem('retirementYear', RETIREMENT_YEAR);
             localStorage.setItem('tvHoursPerDay', TV_HOURS_PER_DAY);
-            localStorage.setItem('surfSessionsPerWeek', SURF_SESSIONS_PER_WEEK); // Save new setting
+            localStorage.setItem('surfSessionsPerWeek', SURF_SESSIONS_PER_WEEK);
+            localStorage.setItem('vacationsPerYear', VACATIONS_PER_YEAR);
         }
 
         /**
-         * Recalculates the estimated end date, retirement date, and user's birth date based on current global variables.
+         * Recalculates all relevant dates based on current global variables.
          */
         function recalculateDates() {
-            // Month is 0-indexed in JavaScript Date object, so subtract 1
-            userBirthDate = new Date(BIRTH_YEAR, BIRTH_MONTH - 1, BIRTH_DAY);
+            const currentYear = new Date().getFullYear();
 
+            // User's dates
+            userBirthDate = new Date(BIRTH_YEAR, BIRTH_MONTH - 1, BIRTH_DAY);
             estimatedEndDate = new Date(
                 userBirthDate.getFullYear() + ESTIMATED_LIFESPAN_YEARS,
                 userBirthDate.getMonth(),
                 userBirthDate.getDate()
             );
+
+            // Spouse's dates
+            spouseBirthDate = new Date(SPOUSE_BIRTH_YEAR, SPOUSE_BIRTH_MONTH - 1, SPOUSE_BIRTH_DAY);
+            spouseEstimatedEndDate = new Date(
+                spouseBirthDate.getFullYear() + SPOUSE_LIFESPAN_YEARS,
+                spouseBirthDate.getMonth(),
+                spouseBirthDate.getDate()
+            );
+
+            // Time Left Together: The earlier of the two estimated end dates
+            togetherEndDate = new Date(Math.min(estimatedEndDate.getTime(), spouseEstimatedEndDate.getTime()));
+
             retirementDate = new Date(RETIREMENT_YEAR, 0, 1);
         }
 
@@ -424,63 +554,62 @@
             const newBirthDay = parseInt(birthDayInput.value);
             const newBirthYear = parseInt(birthYearInput.value);
             const newLifespan = parseInt(lifespanInput.value);
+
+            const newSpouseBirthMonth = parseInt(spouseBirthMonthInput.value);
+            const newSpouseBirthDay = parseInt(spouseBirthDayInput.value);
+            const newSpouseBirthYear = parseInt(spouseBirthYearInput.value);
+            const newSpouseLifespan = parseInt(spouseLifespanInput.value);
+
             const newRetirementYear = parseInt(retirementYearInput.value);
             const newTvHoursPerDay = parseFloat(tvHoursPerDayInput.value);
-            const newSurfSessionsPerWeek = parseFloat(surfSessionsPerWeekInput.value); // Get new surf sessions input
+            const newSurfSessionsPerWeek = parseFloat(surfSessionsPerWeekInput.value);
+            const newVacationsPerYear = parseFloat(vacationsPerYearInput.value); // Get new vacations input
 
             const currentYear = new Date().getFullYear();
 
-            // Basic validation for birth date
+            // --- Validation for User's Birth Date ---
             if (isNaN(newBirthMonth) || newBirthMonth < 1 || newBirthMonth > 12) {
-                showInputMessage('Please enter a valid birth month (1-12).', 'error');
-                return;
-            }
+                showInputMessage('Please enter a valid birth month (1-12) for yourself.', 'error'); return; }
             if (isNaN(newBirthDay) || newBirthDay < 1 || newBirthDay > 31) {
-                showInputMessage('Please enter a valid birth day (1-31).', 'error');
-                return;
-            }
+                showInputMessage('Please enter a valid birth day (1-31) for yourself.', 'error'); return; }
             if (isNaN(newBirthYear) || newBirthYear < 1900 || newBirthYear > currentYear) {
-                showInputMessage(`Please enter a valid birth year (1900-${currentYear}).`, 'error');
-                return;
-            }
+                showInputMessage(`Please enter a valid birth year (1900-${currentYear}) for yourself.`, 'error'); return; }
+            const testUserDate = new Date(newBirthYear, newBirthMonth - 1, newBirthDay);
+            if (testUserDate.getMonth() + 1 !== newBirthMonth || testUserDate.getDate() !== newBirthDay || testUserDate.getFullYear() !== newBirthYear) {
+                showInputMessage('Please enter a valid birth date for yourself.', 'error'); return; }
 
-            // Validate the full date to ensure it's a real date (e.g., no Feb 30th)
-            const testDate = new Date(newBirthYear, newBirthMonth - 1, newBirthDay);
-            if (testDate.getMonth() + 1 !== newBirthMonth || testDate.getDate() !== newBirthDay || testDate.getFullYear() !== newBirthYear) {
-                showInputMessage('Please enter a valid birth date.', 'error');
-                return;
-            }
+            // --- Validation for Spouse's Birth Date ---
+            if (isNaN(newSpouseBirthMonth) || newSpouseBirthMonth < 1 || newSpouseBirthMonth > 12) {
+                showInputMessage('Please enter a valid birth month (1-12) for your spouse.', 'error'); return; }
+            if (isNaN(newSpouseBirthDay) || newSpouseBirthDay < 1 || newSpouseBirthDay > 31) {
+                showInputMessage('Please enter a valid birth day (1-31) for your spouse.', 'error'); return; }
+            if (isNaN(newSpouseBirthYear) || newSpouseBirthYear < 1900 || newSpouseBirthYear > currentYear) {
+                showInputMessage(`Please enter a valid birth year (1900-${currentYear}) for your spouse.`, 'error'); return; }
+            const testSpouseDate = new Date(newSpouseBirthYear, newSpouseBirthMonth - 1, newSpouseBirthDay);
+            if (testSpouseDate.getMonth() + 1 !== newSpouseBirthMonth || testSpouseDate.getDate() !== newSpouseBirthDay || testSpouseDate.getFullYear() !== newSpouseBirthYear) {
+                showInputMessage('Please enter a valid birth date for your spouse.', 'error'); return; }
 
-            // Validate lifespan and retirement year
+            // --- Validation for Lifespans ---
             if (isNaN(newLifespan) || newLifespan < 1 || newLifespan > 120) {
-                showInputMessage('Please enter a valid lifespan (1-120 years).', 'error');
-                return;
-            }
-            if (isNaN(newRetirementYear) || newRetirementYear < newBirthYear || newRetirementYear > 2100) {
-                showInputMessage('Please enter a valid retirement year (after birth year, up to 2100).', 'error');
-                return;
-            }
+                showInputMessage('Please enter a valid lifespan (1-120 years) for yourself.', 'error'); return; }
+            if (isNaN(newSpouseLifespan) || newSpouseLifespan < 1 || newSpouseLifespan > 120) {
+                showInputMessage('Please enter a valid lifespan (1-120 years) for your spouse.', 'error'); return; }
 
-            // Validate TV hours per day
-            if (isNaN(newTvHoursPerDay) || newTvHoursPerDay < 0 || newTvHoursPerDay > ACTIVE_HOURS_PER_DAY_BASE) { // Max 24 hours
-                showInputMessage(`TV hours cannot exceed 24 hours per day.`, 'error');
-                return;
-            }
-
-            // Validate surf sessions per week
+            // --- Validation for Other Inputs ---
+            if (isNaN(newRetirementYear) || newRetirementYear < Math.max(newBirthYear, newSpouseBirthYear) || newRetirementYear > 2100) {
+                showInputMessage('Please enter a valid retirement year (after both birth years, up to 2100).', 'error'); return; }
+            if (isNaN(newTvHoursPerDay) || newTvHoursPerDay < 0 || newTvHoursPerDay > ACTIVE_HOURS_PER_DAY_BASE) {
+                showInputMessage(`TV hours cannot exceed ${ACTIVE_HOURS_PER_DAY_BASE} hours per day.`, 'error'); return; }
             if (isNaN(newSurfSessionsPerWeek) || newSurfSessionsPerWeek < 0 || newSurfSessionsPerWeek > 7) {
-                showInputMessage(`Surf sessions per week must be between 0 and 7.`, 'error');
-                return;
-            }
+                showInputMessage(`Surf sessions per week must be between 0 and 7.`, 'error'); return; }
+            if (isNaN(newVacationsPerYear) || newVacationsPerYear < 0 || newVacationsPerYear > 52) {
+                showInputMessage(`Vacations per year must be between 0 and 52.`, 'error'); return; }
+
 
             // Update global variables
-            BIRTH_MONTH = newBirthMonth;
-            BIRTH_DAY = newBirthDay;
-            BIRTH_YEAR = newBirthYear;
-            ESTIMATED_LIFESPAN_YEARS = newLifespan;
-            RETIREMENT_YEAR = newRetirementYear;
-            TV_HOURS_PER_DAY = newTvHoursPerDay;
-            SURF_SESSIONS_PER_WEEK = newSurfSessionsPerWeek; // Update new variable
+            BIRTH_MONTH = newBirthMonth; BIRTH_DAY = newBirthDay; BIRTH_YEAR = newBirthYear; ESTIMATED_LIFESPAN_YEARS = newLifespan;
+            SPOUSE_BIRTH_MONTH = newSpouseBirthMonth; SPOUSE_BIRTH_DAY = newSpouseBirthDay; SPOUSE_BIRTH_YEAR = newSpouseBirthYear; SPOUSE_LIFESPAN_YEARS = newSpouseLifespan;
+            RETIREMENT_YEAR = newRetirementYear; TV_HOURS_PER_DAY = newTvHoursPerDay; SURF_SESSIONS_PER_WEEK = newSurfSessionsPerWeek; VACATIONS_PER_YEAR = newVacationsPerYear;
 
             // Recalculate dates based on new inputs
             recalculateDates();
@@ -514,13 +643,13 @@
          * @param {number} targetMonth - The month of the event (1-12).
          * @param {number} targetDay - The day of the event (1-31).
          * @param {Date} now - The current date.
-         * @param {Date} estimatedEndDate - The estimated end date of life.
+         * @param {Date} endDate - The specific end date for this calculation (e.g., estimatedEndDate or togetherEndDate).
          * @returns {number} The count of the event occurrences.
          */
-        function countRecurringEvents(targetMonth, targetDay, now, estimatedEndDate) {
+        function countRecurringEvents(targetMonth, targetDay, now, endDate) {
             let count = 0;
             const currentYear = now.getFullYear();
-            const endYear = estimatedEndDate.getFullYear();
+            const endYear = endDate.getFullYear();
 
             for (let year = currentYear; year <= endYear; year++) {
                 const eventDateThisYear = new Date(year, targetMonth - 1, targetDay); // Month is 0-indexed
@@ -531,7 +660,7 @@
                 }
 
                 // Check if the event falls within the remaining lifespan
-                if (eventDateThisYear >= now && eventDateThisYear <= estimatedEndDate) {
+                if (eventDateThisYear >= now && eventDateThisYear <= endDate) {
                     count++;
                 }
             }
@@ -544,79 +673,114 @@
          */
         function updateCountdown() {
             const now = new Date(); /* Get the current time */
-            const timeLeftMs = estimatedEndDate.getTime() - now.getTime(); /* Milliseconds left until end of life */
 
-            /* Check if time has run out */
-            if (timeLeftMs <= 0) {
-                /* If time is up, set all displays to '0' and show the "Time's Up!" message */
-                sunsetsLeftElement.textContent = '0';
-                activeHoursLeftWithoutTVElement.textContent = '0';
-                activeHoursLeftWithTVElement.textContent = '0';
-                birthdaysLeftElement.textContent = '0'; // Set to 0
-                christmasesLeftElement.textContent = '0'; // Set to 0
-                newYearsLeftElement.textContent = '0'; // Set to 0
-                surfSessionsTotalElement.textContent = '0'; // Set to 0
-                statusMessageElement.textContent = "Time's Up!";
-                statusMessageElement.classList.remove('hidden'); /* Make message visible */
-                clearInterval(countdownInterval); /* Stop the countdown from updating */
-                return; /* Exit the function */
-            }
+            // --- User's Individual Countdown ---
+            const timeLeftMsUser = estimatedEndDate.getTime() - now.getTime();
+            const totalSecondsLeftUser = Math.floor(timeLeftMsUser / 1000);
 
-            /* --- Calculate total seconds left --- */
-            let totalSecondsLeft = Math.floor(timeLeftMs / 1000);
+            // --- Active Hours (User) ---
+            let activeSecondsTotalAfterSleepUser = Math.floor(totalSecondsLeftUser * (ACTIVE_HOURS_PER_DAY_BASE / 24));
+            const workEndDateForCalculationUser = Math.min(retirementDate.getTime(), estimatedEndDate.getTime());
+            const workDurationMsUser = Math.max(0, workEndDateForCalculationUser - now.getTime());
+            const workWeeksDurationUser = workDurationMsUser / (1000 * 60 * 60 * 24 * 7);
+            const totalWorkHoursToSubtractUser = workWeeksDurationUser * WORK_HOURS_PER_WEEK;
+            const totalWorkSecondsToSubtractUser = totalWorkHoursToSubtractUser * 60 * 60;
+            let activeSecondsAfterSleepAndWorkUser = Math.max(0, activeSecondsTotalAfterSleepUser - totalWorkSecondsToSubtractUser);
 
-            /* --- Calculate total active seconds (excluding sleep) --- */
-            let activeSecondsTotalAfterSleep = Math.floor(totalSecondsLeft * (ACTIVE_HOURS_PER_DAY_BASE / 24));
+            const activeHoursLeftWithoutTV = Math.floor(activeSecondsAfterSleepAndWorkUser / (60 * 60));
 
-            /* --- Subtract working hours from active seconds --- */
-            const workEndDateForCalculation = Math.min(retirementDate.getTime(), estimatedEndDate.getTime());
-            const workDurationMs = Math.max(0, workEndDateForCalculation - now.getTime());
-            const workWeeksDuration = workDurationMs / (1000 * 60 * 60 * 24 * 7);
-            const totalWorkHoursToSubtract = workWeeksDuration * WORK_HOURS_PER_WEEK;
-            const totalWorkSecondsToSubtract = totalWorkHoursToSubtract * 60 * 60;
+            const totalTVHoursToSubtractUser = (totalSecondsLeftUser / (60 * 60 * 24)) * TV_HOURS_PER_DAY;
+            const totalTVSecondsToSubtractUser = totalTVHoursToSubtractUser * 60 * 60;
+            let activeSecondsAfterAllDeductionsUser = Math.max(0, activeSecondsAfterSleepAndWorkUser - totalTVSecondsToSubtractUser);
+            const activeHoursLeftWithTV = Math.floor(activeSecondsAfterAllDeductionsUser / (60 * 60));
 
-            let activeSecondsAfterSleepAndWork = Math.max(0, activeSecondsTotalAfterSleep - totalWorkSecondsToSubtract);
-
-            /* --- Calculate Active Hours Left (Excl. Sleep & Work) - BEFORE TV DEDUCTION --- */
-            const activeHoursLeftWithoutTV = Math.floor(activeSecondsAfterSleepAndWork / (60 * 60));
-
-            /* --- Subtract TV hours from active seconds (for the final display) --- */
-            const totalTVHoursToSubtract = (totalSecondsLeft / (60 * 60 * 24)) * TV_HOURS_PER_DAY;
-            const totalTVSecondsToSubtract = totalTVHoursToSubtract * 60 * 60;
-
-            let activeSecondsAfterAllDeductions = Math.max(0, activeSecondsAfterSleepAndWork - totalTVSecondsToSubtract);
-
-            /* --- Break down remaining active seconds into days, hours --- */
-            const daysLeft = Math.floor(totalSecondsLeft / (1000 * 60 * 60 * 24)); /* Still needed for other calculations */
-
-            const activeHoursLeftWithTV = Math.floor(activeSecondsAfterAllDeductions / (60 * 60));
-
-            /* --- Calculate and Update Event Counts --- */
-            // Sunsets Left: Use Math.ceil on the total remaining days (float) to include the current day's sunset
-            const totalDaysUntilEndFloat = (estimatedEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-            const sunsetsLeft = Math.ceil(totalDaysUntilEndFloat);
+            // --- Individual Milestones (User) ---
+            const sunsetsLeft = Math.ceil((estimatedEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)); // Sunsets include current partial day
             
             const birthdays = countRecurringEvents(BIRTH_MONTH, BIRTH_DAY, now, estimatedEndDate);
-            const christmases = countRecurringEvents(12, 25, now, estimatedEndDate); // December is month 12
-            const newYears = countRecurringEvents(1, 1, now, estimatedEndDate); // January is month 1
-
-            // Calculate total surf sessions left
-            const totalWeeksUntilEndFloat = totalDaysUntilEndFloat / 7;
-            let surfSessionsTotal = Math.ceil(totalWeeksUntilEndFloat * SURF_SESSIONS_PER_WEEK);
-
-            // Ensure it's not negative
-            surfSessionsTotal = Math.max(0, surfSessionsTotal);
+            const christmases = countRecurringEvents(12, 25, now, estimatedEndDate);
+            const newYears = countRecurringEvents(1, 1, now, estimatedEndDate);
+            const surfSessionsTotal = Math.max(0, Math.ceil(((estimatedEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 7)) * SURF_SESSIONS_PER_WEEK));
 
 
-            /* --- Update the Display --- */
+            // --- Time Left Together Calculations ---
+            const timeLeftMsTogether = togetherEndDate.getTime() - now.getTime();
+
+            // If together time is over, set all together counters to 0
+            if (timeLeftMsTogether <= 0) {
+                togetherDaysLeftElement.textContent = '0';
+                togetherActiveHoursLeftElement.textContent = '0';
+                morningCoffeeLeftElement.textContent = '0';
+                togetherBirthdaysLeftElement.textContent = '0';
+                togetherValentinesLeftElement.textContent = '0'; // Set to 0
+                vacationsRemainingElement.textContent = '0';
+                statusMessageElement.textContent = "Time Together is Up!";
+                statusMessageElement.classList.remove('hidden');
+                // Don't clear main interval, as individual time might still be left
+            } else {
+                // Corrected: Use Math.ceil for daysLeftTogether to align with Morning Coffees
+                const daysLeftTogether = Math.ceil(timeLeftMsTogether / (1000 * 60 * 60 * 24));
+
+                const totalSecondsLeftTogether = Math.floor(timeLeftMsTogether / 1000); // Still use floor for seconds for other calculations
+
+                // Active Hours Together (excluding sleep, work, TV)
+                let activeSecondsTotalAfterSleepTogether = Math.floor(totalSecondsLeftTogether * (ACTIVE_HOURS_PER_DAY_BASE / 24));
+                const workEndDateForCalculationTogether = Math.min(retirementDate.getTime(), togetherEndDate.getTime());
+                const workDurationMsTogether = Math.max(0, workEndDateForCalculationTogether - now.getTime());
+                const workWeeksDurationTogether = workDurationMsTogether / (1000 * 60 * 60 * 24 * 7);
+                const totalWorkHoursToSubtractTogether = workWeeksDurationTogether * WORK_HOURS_PER_WEEK;
+                const totalWorkSecondsToSubtractTogether = totalWorkHoursToSubtractTogether * 60 * 60;
+                let activeSecondsAfterSleepAndWorkTogether = Math.max(0, activeSecondsTotalAfterSleepTogether - totalWorkSecondsToSubtractTogether);
+
+                const totalTVHoursToSubtractTogether = (totalSecondsLeftTogether / (60 * 60 * 24)) * TV_HOURS_PER_DAY;
+                const totalTVSecondsToSubtractTogether = totalTVHoursToSubtractTogether * 60 * 60;
+                let activeSecondsAfterAllDeductionsTogether = Math.max(0, activeSecondsAfterSleepAndWorkTogether - totalTVSecondsToSubtractTogether);
+                const activeHoursLeftTogether = Math.floor(activeSecondsAfterAllDeductionsTogether / (60 * 60));
+
+                // Morning Coffees (already uses Math.ceil)
+                const morningCoffeeLeft = Math.ceil(timeLeftMsTogether / (1000 * 60 * 60 * 24));
+
+                // Birthdays (Yours & Spouse's)
+                const userBirthdaysTogether = countRecurringEvents(BIRTH_MONTH, BIRTH_DAY, now, togetherEndDate);
+                const spouseBirthdaysTogether = countRecurringEvents(SPOUSE_BIRTH_MONTH, SPOUSE_BIRTH_DAY, now, togetherEndDate);
+                const totalBirthdaysTogether = userBirthdaysTogether + spouseBirthdaysTogether;
+
+                // Holidays (New Year's, Valentine's Day, Thanksgiving, Christmas)
+                // Removed New Year's, Thanksgiving, Christmas from display, only Valentine's remains
+                const valentinesTogether = countRecurringEvents(2, 14, now, togetherEndDate);
+
+
+                // Vacations Remaining
+                const yearsLeftTogetherFloat = timeLeftMsTogether / (1000 * 60 * 60 * 24 * 365.25);
+                const vacationsRemaining = Math.ceil(yearsLeftTogetherFloat * VACATIONS_PER_YEAR);
+
+
+                // --- Update Together Display ---
+                togetherDaysLeftElement.textContent = daysLeftTogether.toLocaleString();
+                togetherActiveHoursLeftElement.textContent = activeHoursLeftTogether.toLocaleString();
+                morningCoffeeLeftElement.textContent = morningCoffeeLeft.toLocaleString();
+                togetherBirthdaysLeftElement.textContent = totalBirthdaysTogether.toLocaleString();
+                togetherValentinesLeftElement.textContent = valentinesTogether.toLocaleString(); // Display
+                vacationsRemainingElement.textContent = vacationsRemaining.toLocaleString();
+                statusMessageElement.classList.add('hidden');
+            }
+
+
+            // --- Update Individual Display (always runs) ---
             sunsetsLeftElement.textContent = sunsetsLeft.toLocaleString();
             activeHoursLeftWithoutTVElement.textContent = activeHoursLeftWithoutTV.toLocaleString();
             activeHoursLeftWithTVElement.textContent = activeHoursLeftWithTV.toLocaleString();
-            birthdaysLeftElement.textContent = birthdays.toLocaleString(); // Display birthdays
-            christmasesLeftElement.textContent = christmases.toLocaleString(); // Display Christmases
-            newYearsLeftElement.textContent = newYears.toLocaleString(); // Display New Year's
-            surfSessionsTotalElement.textContent = surfSessionsTotal.toLocaleString(); // Display total surf sessions
-            statusMessageElement.classList.add('hidden');
+            birthdaysLeftElement.textContent = birthdays.toLocaleString();
+            christmasesLeftElement.textContent = christmases.toLocaleString();
+            newYearsLeftElement.textContent = newYears.toLocaleString();
+            surfSessionsTotalElement.textContent = surfSessionsTotal.toLocaleString();
+
+            // Handle overall "Time's Up!" if user's estimated end date is reached
+            if (timeLeftMsUser <= 0) {
+                statusMessageElement.textContent = "Time's Up!";
+                statusMessageElement.classList.remove('hidden');
+                clearInterval(countdownInterval); // Stop the main interval
+            }
         }
 
         /* --- Initialization --- */
