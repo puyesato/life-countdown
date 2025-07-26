@@ -258,15 +258,7 @@
             <span id="activeHoursLeft" class="countdown-value">--</span>
         </div>
 
-        <div class="countdown-item">
-            <span class="countdown-label">Current Bitcoin Price (USD)</span>
-            <span id="bitcoinPrice" class="countdown-value">Loading...</span>
-        </div>
-
-        <div class="countdown-item">
-            <span class="countdown-label">Current Bitcoin Block Height</span>
-            <span id="blockHeight" class="countdown-value">Loading...</span>
-        </div>
+        <!-- Removed Bitcoin Price and Block Height display items -->
 
         <!-- LLM Feature Section -->
         <button id="getReflectionBtn" class="llm-button">Get a Life Reflection ✨</button>
@@ -316,9 +308,9 @@
         const reflectionText = document.getElementById('reflectionText');
         const reflectionSpinner = document.getElementById('reflectionSpinner');
 
-        // Bitcoin Data Elements
-        const bitcoinPriceElement = document.getElementById('bitcoinPrice');
-        const blockHeightElement = document.getElementById('blockHeight');
+        // Removed Bitcoin Data Elements references:
+        // const bitcoinPriceElement = document.getElementById('bitcoinPrice');
+        // const blockHeightElement = document.getElementById('blockHeight');
 
         /**
          * Displays a message in the input message box.
@@ -490,7 +482,7 @@
 
         // Store the interval ID so we can clear it when settings are updated
         let countdownInterval;
-        let bitcoinDataInterval; // New interval for Bitcoin data
+        let bitcoinDataInterval; // This variable will no longer be used but is kept for clarity if re-added
 
         /**
          * Starts or restarts the countdown interval.
@@ -570,15 +562,13 @@
             statusMessageElement.classList.add('hidden');
         }
 
-        /**
-         * Fetches current Bitcoin price and block height from external APIs.
-         */
+        // Removed the fetchBitcoinData function entirely
+        /*
         async function fetchBitcoinData() {
             bitcoinPriceElement.textContent = 'Loading...';
             blockHeightElement.textContent = 'Loading...';
 
             try {
-                // Fetch Bitcoin Price from CoinGecko
                 const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
                 const priceData = await priceResponse.json();
                 if (priceData && priceData.bitcoin && priceData.bitcoin.usd) {
@@ -593,9 +583,8 @@
             }
 
             try {
-                // Fetch Bitcoin Block Height from Blockchain.com
                 const blockHeightResponse = await fetch('https://blockchain.info/q/getblockcount');
-                const blockHeightData = await blockHeightResponse.text(); // block height is plain text
+                const blockHeightData = await blockHeightResponse.text();
                 const blockHeight = parseInt(blockHeightData);
                 if (!isNaN(blockHeight)) {
                     blockHeightElement.textContent = blockHeight.toLocaleString();
@@ -608,6 +597,7 @@
                 console.error('Error fetching block height:', error);
             }
         }
+        */
 
 
         /**
@@ -658,9 +648,11 @@
         loadSettings();
         // Start the life countdown
         startCountdown();
-        // Fetch Bitcoin data immediately and then every 30 seconds
-        fetchBitcoinData();
-        bitcoinDataInterval = setInterval(fetchBitcoinData, 30000); // Update every 30 seconds
+        // Clear the Bitcoin data interval if it was running
+        if (bitcoinDataInterval) {
+            clearInterval(bitcoinDataInterval);
+        }
+        // Removed initial call to fetchBitcoinData()
     </script>
 </body>
 </html>
