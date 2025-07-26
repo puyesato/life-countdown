@@ -3,7 +3,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digital Life Watch</title>
-    <!-- Tailwind CSS CDN for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Base styles for the body to center the watch and set background */
@@ -117,7 +116,7 @@
         .countdown-item {
             display: flex; /* Changed to flex */
             flex-direction: row; /* Arranges children in a row */
-            justify-content: space-between; /* Pushes label to left, value to right */
+            justify-content: space-between; /* Pushes value to left, label to right */
             align-items: center; /* Vertically centers label and value */
             width: 100%;
             padding: 5px 0; /* Add some vertical padding for spacing */
@@ -133,7 +132,7 @@
             color: #cbd5e0; /* text-gray-300 in Tailwind */
             margin-bottom: 0; /* No margin-bottom when in a row */
             flex-shrink: 0; /* Prevent label from shrinking */
-            padding-right: 10px; /* Space between label and value */
+            padding-left: 10px; /* Space between value and label */
         }
         /* The actual countdown numbers - unified with input font size */
         .countdown-value {
@@ -143,9 +142,20 @@
             color: #63b3ed; /* text-blue-300 in Tailwind */
             text-shadow: 0 0 8px rgba(99, 179, 237, 0.6); /* Subtle glow effect */
             line-height: 1; /* Compact line height */
-            text-align: right; /* Ensure value is right-aligned within its space */
+            text-align: left; /* Ensure value is left-aligned within its space */
             flex-grow: 1; /* Allow value to take up remaining space */
         }
+
+        /* Styling for the results title */
+        .results-title {
+            font-size: 1.1rem; /* Slightly larger than labels, smaller than main title */
+            font-weight: 600;
+            color: #e2e8f0;
+            text-align: center; /* Center the title */
+            margin-bottom: 15px; /* Space below the title */
+            margin-top: 10px; /* Space above the title */
+        }
+
 
         /* Media queries for larger screens (desktop) */
         @media (min-width: 640px) { /* Tailwind's 'sm' breakpoint */
@@ -179,6 +189,9 @@
             .countdown-value {
                 font-size: 1.2rem; /* Larger on desktop */
             }
+            .results-title {
+                font-size: 1.3rem;
+            }
         }
     </style>
 </head>
@@ -186,7 +199,6 @@
     <div class="watch-container">
         <h1 class="text-3xl font-extrabold text-blue-200 mb-4">Life Countdown</h1>
 
-        <!-- Input Fields Section -->
         <div class="input-group">
             <label>Your Birth Date:</label>
             <div class="input-flex-group">
@@ -213,33 +225,50 @@
             <label for="tvHoursPerDayInput">Hours of TV/Streaming per Day:</label>
             <input type="number" id="tvHoursPerDayInput" placeholder="e.g., 2" min="0" max="24">
         </div>
+        <div class="input-group">
+            <label for="surfSessionsPerWeekInput">Surf Sessions per Week:</label>
+            <input type="number" id="surfSessionsPerWeekInput" placeholder="e.g., 3" min="0" max="7">
+        </div>
         <button id="saveSettingsBtn" class="save-button">Save Settings</button>
         <div id="inputMessageBox" class="message-box hidden"></div>
 
-        <hr class="w-full border-t border-gray-600 my-8"> <!-- Separator -->
+        <hr class="w-full border-t border-gray-600 my-8"> <h2 class="results-title">Time is our most valuable asset.</h2>
 
-        <!-- Countdown Display Section -->
         <div class="countdown-item">
-            <span class="countdown-label">Sunsets Left</span>
             <span id="sunsetsLeft" class="countdown-value">--</span>
+            <span class="countdown-label">🌅</span>
         </div>
 
         <div class="countdown-item">
-            <span class="countdown-label">Active Hours Left (Excl. Sleep & Work)</span>
             <span id="activeHoursLeftWithoutTV" class="countdown-value">--</span>
+            <span class="countdown-label">Active Hours (-😴, -💼)</span>
         </div>
 
         <div class="countdown-item">
-            <span class="countdown-label">Active Hours Left (Excl. Sleep, Work & TV)</span>
             <span id="activeHoursLeftWithTV" class="countdown-value">--</span>
+            <span class="countdown-label">Hours (-😴, -💼, -📺)</span>
         </div>
 
         <div class="countdown-item">
-            <span class="countdown-label">Remaining Birthdays, Christmases, New Year's, Summers</span>
-            <span id="annualEventsTotal" class="countdown-value">--</span>
+            <span id="birthdaysLeft" class="countdown-value">--</span>
+            <span class="countdown-label">🎂</span>
         </div>
 
-        <!-- Message display (e.g., "Time's Up!") -->
+        <div class="countdown-item">
+            <span id="christmasesLeft" class="countdown-value">--</span>
+            <span class="countdown-label">🎄</span>
+        </div>
+
+        <div class="countdown-item">
+            <span id="newYearsLeft" class="countdown-value">--</span>
+            <span class="countdown-label">🎉</span>
+        </div>
+
+        <div class="countdown-item">
+            <span id="surfSessionsTotal" class="countdown-value">--</span>
+            <span class="countdown-label">🏄‍♀️ Stoked</span>
+        </div>
+
         <div id="statusMessage" class="message hidden"></div>
     </div>
 
@@ -252,6 +281,7 @@
         let ESTIMATED_LIFESPAN_YEARS = 85;
         let RETIREMENT_YEAR = 2055;
         let TV_HOURS_PER_DAY = 2; // Default hours of TV/streaming per day
+        let SURF_SESSIONS_PER_WEEK = 0; // New: Default surf sessions per week
         const ACTIVE_HOURS_PER_DAY_BASE = 16; // 24 hours - 8 hours for sleep (base active hours before work/TV)
         const WORK_HOURS_PER_WEEK = 40; // Hours worked per week
 
@@ -267,13 +297,17 @@
         const lifespanInput = document.getElementById('lifespanInput');
         const retirementYearInput = document.getElementById('retirementYearInput');
         const tvHoursPerDayInput = document.getElementById('tvHoursPerDayInput');
+        const surfSessionsPerWeekInput = document.getElementById('surfSessionsPerWeekInput'); // New input reference
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
         const inputMessageBox = document.getElementById('inputMessageBox');
 
         const sunsetsLeftElement = document.getElementById('sunsetsLeft');
         const activeHoursLeftWithoutTVElement = document.getElementById('activeHoursLeftWithoutTV');
         const activeHoursLeftWithTVElement = document.getElementById('activeHoursLeftWithTV');
-        const annualEventsTotalElement = document.getElementById('annualEventsTotal'); // This will now show only birthdays
+        const birthdaysLeftElement = document.getElementById('birthdaysLeft');
+        const christmasesLeftElement = document.getElementById('christmasesLeft');
+        const newYearsLeftElement = document.getElementById('newYearsLeft');
+        const surfSessionsTotalElement = document.getElementById('surfSessionsTotal'); // New display reference
         const statusMessageElement = document.getElementById('statusMessage');
 
         /**
@@ -301,6 +335,7 @@
             const savedLifespan = localStorage.getItem('lifespan');
             const savedRetirementYear = localStorage.getItem('retirementYear');
             const savedTvHoursPerDay = localStorage.getItem('tvHoursPerDay');
+            const savedSurfSessionsPerWeek = localStorage.getItem('surfSessionsPerWeek'); // Load new setting
 
             // Load and apply birth date components
             if (savedBirthMonth) {
@@ -341,6 +376,12 @@
             } else {
                 tvHoursPerDayInput.value = TV_HOURS_PER_DAY; // Set default if not saved
             }
+            if (savedSurfSessionsPerWeek) { // Load new setting value
+                SURF_SESSIONS_PER_WEEK = parseFloat(savedSurfSessionsPerWeek);
+                surfSessionsPerWeekInput.value = SURF_SESSIONS_PER_WEEK;
+            } else {
+                surfSessionsPerWeekInput.value = SURF_SESSIONS_PER_WEEK; // Set default if not saved
+            }
 
             // Recalculate dates based on loaded or default values
             recalculateDates();
@@ -356,6 +397,7 @@
             localStorage.setItem('lifespan', ESTIMATED_LIFESPAN_YEARS);
             localStorage.setItem('retirementYear', RETIREMENT_YEAR);
             localStorage.setItem('tvHoursPerDay', TV_HOURS_PER_DAY);
+            localStorage.setItem('surfSessionsPerWeek', SURF_SESSIONS_PER_WEEK); // Save new setting
         }
 
         /**
@@ -384,6 +426,7 @@
             const newLifespan = parseInt(lifespanInput.value);
             const newRetirementYear = parseInt(retirementYearInput.value);
             const newTvHoursPerDay = parseFloat(tvHoursPerDayInput.value);
+            const newSurfSessionsPerWeek = parseFloat(surfSessionsPerWeekInput.value); // Get new surf sessions input
 
             const currentYear = new Date().getFullYear();
 
@@ -424,6 +467,12 @@
                 return;
             }
 
+            // Validate surf sessions per week
+            if (isNaN(newSurfSessionsPerWeek) || newSurfSessionsPerWeek < 0 || newSurfSessionsPerWeek > 7) {
+                showInputMessage(`Surf sessions per week must be between 0 and 7.`, 'error');
+                return;
+            }
+
             // Update global variables
             BIRTH_MONTH = newBirthMonth;
             BIRTH_DAY = newBirthDay;
@@ -431,6 +480,7 @@
             ESTIMATED_LIFESPAN_YEARS = newLifespan;
             RETIREMENT_YEAR = newRetirementYear;
             TV_HOURS_PER_DAY = newTvHoursPerDay;
+            SURF_SESSIONS_PER_WEEK = newSurfSessionsPerWeek; // Update new variable
 
             // Recalculate dates based on new inputs
             recalculateDates();
@@ -493,29 +543,32 @@
          * This function is called repeatedly by setInterval.
          */
         function updateCountdown() {
-            const now = new Date(); // Get the current time
-            const timeLeftMs = estimatedEndDate.getTime() - now.getTime(); // Milliseconds left until end of life
+            const now = new Date(); /* Get the current time */
+            const timeLeftMs = estimatedEndDate.getTime() - now.getTime(); /* Milliseconds left until end of life */
 
-            // Check if time has run out
+            /* Check if time has run out */
             if (timeLeftMs <= 0) {
-                // If time is up, set all displays to '0' and show the "Time's Up!" message
+                /* If time is up, set all displays to '0' and show the "Time's Up!" message */
                 sunsetsLeftElement.textContent = '0';
                 activeHoursLeftWithoutTVElement.textContent = '0';
                 activeHoursLeftWithTVElement.textContent = '0';
-                annualEventsTotalElement.textContent = '0'; // Set to 0
+                birthdaysLeftElement.textContent = '0'; // Set to 0
+                christmasesLeftElement.textContent = '0'; // Set to 0
+                newYearsLeftElement.textContent = '0'; // Set to 0
+                surfSessionsTotalElement.textContent = '0'; // Set to 0
                 statusMessageElement.textContent = "Time's Up!";
-                statusMessageElement.classList.remove('hidden'); // Make message visible
-                clearInterval(countdownInterval); // Stop the countdown from updating
-                return; // Exit the function
+                statusMessageElement.classList.remove('hidden'); /* Make message visible */
+                clearInterval(countdownInterval); /* Stop the countdown from updating */
+                return; /* Exit the function */
             }
 
-            // --- Calculate total seconds left ---
+            /* --- Calculate total seconds left --- */
             let totalSecondsLeft = Math.floor(timeLeftMs / 1000);
 
-            // --- Calculate total active seconds (excluding sleep) ---
+            /* --- Calculate total active seconds (excluding sleep) --- */
             let activeSecondsTotalAfterSleep = Math.floor(totalSecondsLeft * (ACTIVE_HOURS_PER_DAY_BASE / 24));
 
-            // --- Subtract working hours from active seconds ---
+            /* --- Subtract working hours from active seconds --- */
             const workEndDateForCalculation = Math.min(retirementDate.getTime(), estimatedEndDate.getTime());
             const workDurationMs = Math.max(0, workEndDateForCalculation - now.getTime());
             const workWeeksDuration = workDurationMs / (1000 * 60 * 60 * 24 * 7);
@@ -524,54 +577,52 @@
 
             let activeSecondsAfterSleepAndWork = Math.max(0, activeSecondsTotalAfterSleep - totalWorkSecondsToSubtract);
 
-            // --- Calculate Active Hours Left (Excl. Sleep & Work) - BEFORE TV DEDUCTION ---
+            /* --- Calculate Active Hours Left (Excl. Sleep & Work) - BEFORE TV DEDUCTION --- */
             const activeHoursLeftWithoutTV = Math.floor(activeSecondsAfterSleepAndWork / (60 * 60));
 
-            // --- Subtract TV hours from active seconds (for the final display) ---
+            /* --- Subtract TV hours from active seconds (for the final display) --- */
             const totalTVHoursToSubtract = (totalSecondsLeft / (60 * 60 * 24)) * TV_HOURS_PER_DAY;
             const totalTVSecondsToSubtract = totalTVHoursToSubtract * 60 * 60;
 
             let activeSecondsAfterAllDeductions = Math.max(0, activeSecondsAfterSleepAndWork - totalTVSecondsToSubtract);
 
-            // --- Break down remaining active seconds into days, hours ---
-            const daysLeft = Math.floor(totalSecondsLeft / (60 * 60 * 24)); // Still needed for sunsets
+            /* --- Break down remaining active seconds into days, hours --- */
+            const daysLeft = Math.floor(totalSecondsLeft / (1000 * 60 * 60 * 24)); /* Still needed for other calculations */
 
             const activeHoursLeftWithTV = Math.floor(activeSecondsAfterAllDeductions / (60 * 60));
 
-            // --- Calculate and Update Event Counts ---
-            const sunsetsLeft = daysLeft; // Sunsets are equal to days left
+            /* --- Calculate and Update Event Counts --- */
+            // Sunsets Left: Use Math.ceil on the total remaining days (float) to include the current day's sunset
+            const totalDaysUntilEndFloat = (estimatedEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+            const sunsetsLeft = Math.ceil(totalDaysUntilEndFloat);
+            
             const birthdays = countRecurringEvents(BIRTH_MONTH, BIRTH_DAY, now, estimatedEndDate);
-            // The other annual events are still calculated but not explicitly displayed as separate numbers
-            // const christmases = countRecurringEvents(12, 25, now, estimatedEndDate);
-            // const newYears = countRecurringEvents(1, 1, now, estimatedEndDate);
-            // let summersLeft = 0;
-            // const currentYear = now.getFullYear();
-            // const endYear = estimatedEndDate.getFullYear();
-            // for (let year = currentYear; year <= endYear; year++) {
-            //     const summerStart = new Date(year, 5, 1);
-            //     const summerEnd = new Date(year, 7, 31);
-            //     if ( (summerStart <= estimatedEndDate && summerEnd >= now) ||
-            //          (summerStart >= now && summerStart <= estimatedEndDate) ||
-            //          (summerEnd >= now && summerEnd <= estimatedEndDate) ) {
-            //         summersLeft++;
-            //     }
-            // }
+            const christmases = countRecurringEvents(12, 25, now, estimatedEndDate); // December is month 12
+            const newYears = countRecurringEvents(1, 1, now, estimatedEndDate); // January is month 1
 
-            // Display only birthdays, but with the comprehensive label
-            annualEventsTotalElement.textContent = birthdays.toLocaleString();
+            // Calculate total surf sessions left
+            const totalWeeksUntilEndFloat = totalDaysUntilEndFloat / 7;
+            let surfSessionsTotal = Math.ceil(totalWeeksUntilEndFloat * SURF_SESSIONS_PER_WEEK);
+
+            // Ensure it's not negative
+            surfSessionsTotal = Math.max(0, surfSessionsTotal);
 
 
-            // --- Update the Display ---
+            /* --- Update the Display --- */
             sunsetsLeftElement.textContent = sunsetsLeft.toLocaleString();
             activeHoursLeftWithoutTVElement.textContent = activeHoursLeftWithoutTV.toLocaleString();
             activeHoursLeftWithTVElement.textContent = activeHoursLeftWithTV.toLocaleString();
+            birthdaysLeftElement.textContent = birthdays.toLocaleString(); // Display birthdays
+            christmasesLeftElement.textContent = christmases.toLocaleString(); // Display Christmases
+            newYearsLeftElement.textContent = newYears.toLocaleString(); // Display New Year's
+            surfSessionsTotalElement.textContent = surfSessionsTotal.toLocaleString(); // Display total surf sessions
             statusMessageElement.classList.add('hidden');
         }
 
-        // --- Initialization ---
-        // Load settings from localStorage when the page loads
+        /* --- Initialization --- */
+        /* Load settings from localStorage when the page loads */
         loadSettings();
-        // Start the life countdown
+        /* Start the life countdown */
         startCountdown();
     </script>
 </body>
