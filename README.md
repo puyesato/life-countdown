@@ -24,7 +24,7 @@
             padding: 20px; /* Adjusted padding for mobile */
             border-radius: 20px; /* Rounded corners for a sleek look */
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4); /* Deep shadow for depth */
-            text-align: center;
+            text-align: left; /* Ensures text inside is left-aligned */
             max-width: 500px; /* Increased max width to accommodate inputs */
             width: 100%; /* Responsive width */
             border: 2px solid #4a5568; /* Subtle border */
@@ -32,7 +32,7 @@
             flex-direction: column;
             gap: 15px; /* Adjusted spacing between countdown items */
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* Aligns items (like input-groups, countdown-items) to the start (left) */
         }
         /* Styling for input groups */
         .input-group {
@@ -115,29 +115,39 @@
 
         /* Styling for each individual countdown display item */
         .countdown-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: flex; /* Changed to flex */
+            flex-direction: row; /* Arranges children in a row */
+            justify-content: space-between; /* Pushes label to left, value to right */
+            align-items: center; /* Vertically centers label and value */
             width: 100%;
+            padding: 5px 0; /* Add some vertical padding for spacing */
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1); /* Subtle separator */
         }
-        /* Labels for the countdown values (e.g., "Days Left") */
+        .countdown-item:last-child {
+            border-bottom: none; /* No border for the last item */
+        }
+        /* Labels for the countdown values (e.g., "Sunsets Left") */
         .countdown-label {
-            font-size: 1.1rem; /* Slightly smaller label font on mobile */
+            font-size: 0.95rem; /* Adjusted to be closer to input label size */
             font-weight: 500; /* font-medium in Tailwind */
             color: #cbd5e0; /* text-gray-300 in Tailwind */
-            margin-bottom: 5px; /* Adjusted margin */
+            margin-bottom: 0; /* No margin-bottom when in a row */
+            flex-shrink: 0; /* Prevent label from shrinking */
+            padding-right: 10px; /* Space between label and value */
         }
-        /* The actual countdown numbers */
+        /* The actual countdown numbers - unified with input font size */
         .countdown-value {
             font-family: 'monospace'; /* Using monospace for reliable digital look */
-            font-size: 2.8rem; /* Smaller font size for mobile */
+            font-size: 0.95rem; /* Unified with input font size */
             font-weight: 700; /* font-bold in Tailwind */
             color: #63b3ed; /* text-blue-300 in Tailwind */
             text-shadow: 0 0 8px rgba(99, 179, 237, 0.6); /* Subtle glow effect */
             line-height: 1; /* Compact line height */
+            text-align: right; /* Ensure value is right-aligned within its space */
+            flex-grow: 1; /* Allow value to take up remaining space */
         }
 
-        /* Media queries for larger screens (desktop) to revert to larger sizes */
+        /* Media queries for larger screens (desktop) */
         @media (min-width: 640px) { /* Tailwind's 'sm' breakpoint */
             body {
                 padding: 20px;
@@ -164,10 +174,10 @@
                 font-size: 0.9rem;
             }
             .countdown-label {
-                font-size: 1.25rem;
+                font-size: 1.0rem; /* Slightly larger on desktop */
             }
             .countdown-value {
-                font-size: 3.5rem;
+                font-size: 1.2rem; /* Larger on desktop */
             }
         }
     </style>
@@ -224,6 +234,11 @@
             <span id="activeHoursLeftWithTV" class="countdown-value">--</span>
         </div>
 
+        <div class="countdown-item">
+            <span class="countdown-label">Remaining Birthdays, Christmases, New Year's, Summers</span>
+            <span id="annualEventsTotal" class="countdown-value">--</span>
+        </div>
+
         <!-- Message display (e.g., "Time's Up!") -->
         <div id="statusMessage" class="message hidden"></div>
     </div>
@@ -255,10 +270,10 @@
         const saveSettingsBtn = document.getElementById('saveSettingsBtn');
         const inputMessageBox = document.getElementById('inputMessageBox');
 
-        // Removed daysLeftElement reference
-        const sunsetsLeftElement = document.getElementById('sunsetsLeft'); // Keep this
-        const activeHoursLeftWithoutTVElement = document.getElementById('activeHoursLeftWithoutTV'); // Renamed
-        const activeHoursLeftWithTVElement = document.getElementById('activeHoursLeftWithTV'); // New element
+        const sunsetsLeftElement = document.getElementById('sunsetsLeft');
+        const activeHoursLeftWithoutTVElement = document.getElementById('activeHoursLeftWithoutTV');
+        const activeHoursLeftWithTVElement = document.getElementById('activeHoursLeftWithTV');
+        const annualEventsTotalElement = document.getElementById('annualEventsTotal'); // This will now show only birthdays
         const statusMessageElement = document.getElementById('statusMessage');
 
         /**
@@ -444,6 +459,36 @@
         }
 
         /**
+         * Calculates the number of a specific recurring event (like a birthday or holiday)
+         * between the current date and the estimated end date.
+         * @param {number} targetMonth - The month of the event (1-12).
+         * @param {number} targetDay - The day of the event (1-31).
+         * @param {Date} now - The current date.
+         * @param {Date} estimatedEndDate - The estimated end date of life.
+         * @returns {number} The count of the event occurrences.
+         */
+        function countRecurringEvents(targetMonth, targetDay, now, estimatedEndDate) {
+            let count = 0;
+            const currentYear = now.getFullYear();
+            const endYear = estimatedEndDate.getFullYear();
+
+            for (let year = currentYear; year <= endYear; year++) {
+                const eventDateThisYear = new Date(year, targetMonth - 1, targetDay); // Month is 0-indexed
+
+                // Ensure the date is valid (e.g., handles Feb 29 for non-leap years)
+                if (eventDateThisYear.getMonth() + 1 !== targetMonth || eventDateThisYear.getDate() !== targetDay) {
+                    continue; // Skip invalid dates like Feb 30th
+                }
+
+                // Check if the event falls within the remaining lifespan
+                if (eventDateThisYear >= now && eventDateThisYear <= estimatedEndDate) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        /**
          * Updates the countdown display based on the time remaining until the estimated end date.
          * This function is called repeatedly by setInterval.
          */
@@ -457,6 +502,7 @@
                 sunsetsLeftElement.textContent = '0';
                 activeHoursLeftWithoutTVElement.textContent = '0';
                 activeHoursLeftWithTVElement.textContent = '0';
+                annualEventsTotalElement.textContent = '0'; // Set to 0
                 statusMessageElement.textContent = "Time's Up!";
                 statusMessageElement.classList.remove('hidden'); // Make message visible
                 clearInterval(countdownInterval); // Stop the countdown from updating
@@ -492,8 +538,31 @@
 
             const activeHoursLeftWithTV = Math.floor(activeSecondsAfterAllDeductions / (60 * 60));
 
+            // --- Calculate and Update Event Counts ---
+            const sunsetsLeft = daysLeft; // Sunsets are equal to days left
+            const birthdays = countRecurringEvents(BIRTH_MONTH, BIRTH_DAY, now, estimatedEndDate);
+            // The other annual events are still calculated but not explicitly displayed as separate numbers
+            // const christmases = countRecurringEvents(12, 25, now, estimatedEndDate);
+            // const newYears = countRecurringEvents(1, 1, now, estimatedEndDate);
+            // let summersLeft = 0;
+            // const currentYear = now.getFullYear();
+            // const endYear = estimatedEndDate.getFullYear();
+            // for (let year = currentYear; year <= endYear; year++) {
+            //     const summerStart = new Date(year, 5, 1);
+            //     const summerEnd = new Date(year, 7, 31);
+            //     if ( (summerStart <= estimatedEndDate && summerEnd >= now) ||
+            //          (summerStart >= now && summerStart <= estimatedEndDate) ||
+            //          (summerEnd >= now && summerEnd <= estimatedEndDate) ) {
+            //         summersLeft++;
+            //     }
+            // }
+
+            // Display only birthdays, but with the comprehensive label
+            annualEventsTotalElement.textContent = birthdays.toLocaleString();
+
+
             // --- Update the Display ---
-            sunsetsLeftElement.textContent = daysLeft.toLocaleString(); // Sunsets are equal to days left
+            sunsetsLeftElement.textContent = sunsetsLeft.toLocaleString();
             activeHoursLeftWithoutTVElement.textContent = activeHoursLeftWithoutTV.toLocaleString();
             activeHoursLeftWithTVElement.textContent = activeHoursLeftWithTV.toLocaleString();
             statusMessageElement.classList.add('hidden');
